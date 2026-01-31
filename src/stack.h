@@ -1,7 +1,3 @@
-//
-// Created by Woo Jia Hao on 31/1/26.
-//
-
 #ifndef CHIRP_STACK_H
 #define CHIRP_STACK_H
 
@@ -13,9 +9,9 @@ typedef struct ChirpStack
 {
   uint16_t stack[CHIRP_STACK_SIZE];
 
-  int current_size; // increments when the size of the stack increases
-                    // (different from ptr to avoid confusion)
-  int ptr;          // points to the next available position on the stack
+  uint8_t current_size; // increments when the size of the stack increases
+                        // (different from ptr to avoid confusion)
+  uint8_t ptr;          // points to the next available position on the stack
 } ChirpStack;
 
 ChirpStack *chirp_stack_new();
