@@ -35,6 +35,8 @@ typedef struct Chirp
   uint16_t index_register; // 16 bits to point to location
   uint8_t delay_timer;     // 8 bits to hold values from 0 to 60
   uint8_t sound_timer;     // 8 bits to hold values from 0 to 60
+
+  bool is_running;
 } Chirp;
 
 Chirp *chirp_new(const char *rom_path);
