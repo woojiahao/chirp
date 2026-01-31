@@ -5,16 +5,6 @@
 #include "stack.h"
 #include "registers.h"
 
-#define CHIRP_INSTRUCTIONS_ADDR_START 0x200
-#define CHIRP_INSTRUCTIONS_ADDR_END 0xFFF
-#define CHIRP_INSTRUCTIONS_REGION_SIZE CHIRP_INSTRUCTIONS_ADDR_END - CHIRP_INSTRUCTIONS_ADDR_START
-
-#define CHIRP_FONTS_COUNT 16
-#define CHIRP_FONTS_BYTES CHIRP_FONTS_COUNT * 5
-#define CHIRP_FONTS_ADDR_START 0x050
-#define CHIRP_FONTS_ADDR_END 0x0A0
-#define CHIRP_FONTS_REGION_SIZE CHIRP_FONTS_ADDR_END - CHIRP_FONTS_ADDR_START
-
 // list taken from https://tobiasvl.github.io/blog/write-a-chip-8-emulator/#font
 const static uint8_t CHIRP_FONTS[CHIRP_FONTS_BYTES] = {
     0xF0, 0x90, 0x90, 0x90, 0xF0, // 0

@@ -65,17 +65,17 @@ Chirp *chirp_new(const char *rom_path)
   chirp_load_rom(chirp, rom_path);
   chirp_load_fonts(chirp);
 
-  for (int i = CHIRP_FONTS_ADDR_START; i < CHIRP_FONTS_ADDR_END; i++)
-  {
-    printf("%d\n", chirp_mem_read(chirp->mem, i));
-  }
+  // for (int i = CHIRP_FONTS_ADDR_START; i < CHIRP_FONTS_ADDR_END; i++)
+  // {
+  //   printf("%d\n", chirp_mem_read(chirp->mem, i));
+  // }
 
-  printf("next\n");
+  // printf("next\n");
 
-  for (int i = CHIRP_INSTRUCTIONS_ADDR_START; i < CHIRP_INSTRUCTIONS_ADDR_END; i++)
-  {
-    printf("%d\n", chirp_mem_read(chirp->mem, i));
-  }
+  // for (int i = CHIRP_INSTRUCTIONS_ADDR_START; i < CHIRP_INSTRUCTIONS_ADDR_END; i++)
+  // {
+  //   printf("%d\n", chirp_mem_read(chirp->mem, i));
+  // }
 
   return chirp;
 }

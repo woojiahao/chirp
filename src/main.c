@@ -16,6 +16,7 @@ int main(int argc, char *argv[])
 
   // TODO: Add stats for how long the emulator is running for
   Chirp *chirp = chirp_new(path);
+  chirp_mem_view(chirp->mem);
   chirp_start_emulator_loop(chirp);
 
   return 0;
