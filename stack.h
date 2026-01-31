@@ -9,12 +9,20 @@
 #include <stdbool.h>
 #define CHIRP_STACK_SIZE 64
 
-typedef struct ChirpStack ChirpStack;
+typedef struct ChirpStack
+{
+  uint16_t stack[CHIRP_STACK_SIZE];
 
-void chirp_stack_push(uint16_t addr);
-uint16_t chirp_stack_pop();
-uint16_t chirp_stack_peek();
-bool chirp_stack_is_empty();
-bool chirp_stack_is_full();
+  int current_size; // increments when the size of the stack increases
+                    // (different from ptr to avoid confusion)
+  int ptr;          // points to the next available position on the stack
+} ChirpStack;
+
+ChirpStack *chirp_stack_new();
+void chirp_stack_push(ChirpStack *stack, uint16_t addr);
+uint16_t chirp_stack_pop(ChirpStack *stack);
+uint16_t chirp_stack_peek(ChirpStack *stack);
+bool chirp_stack_is_empty(ChirpStack *stack);
+bool chirp_stack_is_full(ChirpStack *stack);
 
 #endif // CHIRP_STACK_H
