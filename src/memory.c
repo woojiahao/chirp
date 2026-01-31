@@ -4,7 +4,14 @@
 ChirpMemory *chirp_mem_new()
 {
   // we don't allocate the inner array because it's fixed size
-  ChirpMemory *mem = malloc(sizeof(ChirpMemory));
+  ChirpMemory *mem = (ChirpMemory *)malloc(sizeof(ChirpMemory));
+
+  // force initialize to 0
+  for (int i = 0; i < CHIRP_MEMORY_SIZE; i++)
+  {
+    mem->mem[i] = 0;
+  }
+
   return mem;
 }
 

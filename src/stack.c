@@ -5,9 +5,16 @@
 ChirpStack *chirp_stack_new()
 {
   // we don't allocate the inner array because it's fixed size
-  ChirpStack *chirp_stack = malloc(sizeof(ChirpStack));
+  ChirpStack *chirp_stack = (ChirpStack *)malloc(sizeof(ChirpStack));
   chirp_stack->current_size = 0;
   chirp_stack->ptr = 0;
+
+  // force initialize to 0
+  for (int i = 0; i < CHIRP_STACK_SIZE; i++)
+  {
+    chirp_stack->stack[i] = 0;
+  }
+
   return chirp_stack;
 }
 

@@ -7,7 +7,7 @@
 
 typedef struct ChirpRegisters
 {
-    uint8_t mem[CHIRP_REGISTERS_SIZE];
+    uint8_t registers[CHIRP_REGISTERS_SIZE];
 } ChirpRegisters;
 
 ChirpRegisters *chirp_registers_new();
