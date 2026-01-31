@@ -1,23 +1,19 @@
-//
-// Created by Woo Jia Hao on 31/1/26.
-//
-
 #include "memory.h"
 #include <stdlib.h>
 
-struct ChirpMemory
+ChirpMemory *chirp_mem_new()
 {
-  uint8_t mem[CHIRP_MEMORY_SIZE];
-};
-
-static struct ChirpMemory memory;
-
-uint8_t chirp_mem_read(uint16_t addr)
-{
-  return memory.mem[addr & 0x0FFF];
+  // we don't allocate the inner array because it's fixed size
+  ChirpMemory *mem = malloc(sizeof(ChirpMemory));
+  return mem;
 }
 
-void chirp_mem_write(uint16_t addr, uint8_t value)
+uint8_t chirp_mem_read(ChirpMemory *mem, uint16_t addr)
 {
-  memory.mem[addr & 0x0FFF] = value;
+  return mem->mem[addr & 0x0FFF];
+}
+
+void chirp_mem_write(ChirpMemory *mem, uint16_t addr, uint8_t value)
+{
+  mem->mem[addr & 0x0FFF] = value;
 }
