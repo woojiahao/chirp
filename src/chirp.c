@@ -86,12 +86,84 @@ void chirp_update_timers(Chirp *chirp)
   }
 }
 
-void chirp_fetch(Chirp *chirp)
+uint16_t chirp_fetch(Chirp *chirp)
 {
+  uint8_t first_block = chirp_mem_read(chirp->mem, chirp->program_counter++);
+  uint8_t second_block = chirp_mem_read(chirp->mem, chirp->program_counter++);
+
+  // create the instruction using bit shifting
+  uint16_t instruction = ((uint16_t)first_block << 8) | second_block;
+
+  return instruction;
 }
 
-void chirp_execute(Chirp *chirp)
+void chirp_execute(Chirp *chirp, uint16_t instruction)
 {
+  uint16_t opcode = instruction & NIBBLE_ONE;
+
+  switch (opcode)
+  {
+  case 0x0000:
+    switch (instruction & 0x0FFF)
+    {
+    case 0x00E0:
+      // clear screen
+      clear_screen(chirp);
+      return;
+    case 0x0EE:
+      // return from subroutine
+      return_from_subroutine(chirp);
+      return;
+    default:
+      printf("invalid instruction %04X\n", instruction);
+      exit(1);
+    }
+
+  case 0x1000:
+    return;
+
+  case 0x2000:
+    return;
+
+  case 0x3000:
+    return;
+
+  case 0x4000:
+    return;
+
+  case 0x5000:
+    return;
+
+  case 0x6000:
+    return;
+
+  case 0x7000:
+    return;
+
+  case 0x8000:
+    return;
+
+  case 0x9000:
+    return;
+
+  case 0xA000:
+    return;
+
+  case 0xB000:
+    return;
+
+  case 0xC000:
+    return;
+
+  case 0xD000:
+    return;
+
+  case 0xE000:
+    return;
+
+  case 0xF000:
+    return;
+  }
 }
 
 void chirp_start_emulator_loop(Chirp *chirp)
@@ -109,10 +181,10 @@ void chirp_start_emulator_loop(Chirp *chirp)
     timer_accumulator += dt;
 
     // fetch instruction
-    chirp_fetch(chirp);
+    uint16_t instruction = chirp_fetch(chirp);
 
     // execute instruction
-    chirp_execute(chirp);
+    chirp_execute(chirp, instruction);
 
     // update timers
     while (timer_accumulator >= tick_interval)
