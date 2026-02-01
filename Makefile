@@ -3,6 +3,10 @@ CFLAGS  = -Wall -Wextra -Werror -std=c11
 CFLAGS += -Wno-unused-parameter
 LDFLAGS =
 
+# For MacOS linking to SDL3
+CFLAGS += -I/usr/local/include/SDL3
+LDFLAGS += -L/usr/local/lib -lSDL3
+
 OUT_DIR = out
 BIN     = chirp
 SRC_DIR = src
