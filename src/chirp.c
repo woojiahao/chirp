@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <SDL3/SDL.h>
 
 void chirp_load_rom(Chirp *chirp, const char *rom_path)
 {
@@ -108,11 +109,11 @@ void chirp_execute(Chirp *chirp, uint16_t instruction)
     {
     case 0x00E0:
       // clear screen
-      clear_screen(chirp);
+      // clear_screen(chirp);
       return;
     case 0x0EE:
       // return from subroutine
-      return_from_subroutine(chirp);
+      // return_from_subroutine(chirp);
       return;
     default:
       printf("invalid instruction %04X\n", instruction);
@@ -168,8 +169,10 @@ void chirp_execute(Chirp *chirp, uint16_t instruction)
 
 void chirp_start_emulator_loop(Chirp *chirp)
 {
-  const double tick_interval = 1.0 / 60.0; // 60 Hz where we tick 60 times a second
+  const double timer_tick_interval = 1.0 / 60.0;
+  const double cpu_tick_interval = 1.0 / 500.0; // TODO: make this variable
   double timer_accumulator = 0.0;
+  double cpu_accumulator = 0.0;
 
   clock_t last_time = clock();
 
@@ -179,19 +182,27 @@ void chirp_start_emulator_loop(Chirp *chirp)
     double dt = (double)(now - last_time) / CLOCKS_PER_SEC;
 
     timer_accumulator += dt;
+    cpu_accumulator += dt;
 
-    // fetch instruction
-    uint16_t instruction = chirp_fetch(chirp);
-
-    // execute instruction
-    chirp_execute(chirp, instruction);
-
-    // update timers
-    while (timer_accumulator >= tick_interval)
+    // interleaving the updates to avoid cpu hogging
+    while (cpu_accumulator >= cpu_tick_interval || timer_accumulator >= timer_tick_interval)
     {
-      // keep updating the timer while there were more ticks than available
-      chirp_update_timers(chirp);
-      timer_accumulator -= tick_interval;
+      if (cpu_accumulator >= cpu_tick_interval)
+      {
+        // fetch instruction
+        uint16_t instruction = chirp_fetch(chirp);
+
+        // execute instruction
+        chirp_execute(chirp, instruction);
+        cpu_accumulator -= cpu_tick_interval;
+      }
+
+      if (timer_accumulator >= timer_tick_interval)
+      {
+        // keep updating the timer while there were more ticks than available
+        chirp_update_timers(chirp);
+        timer_accumulator -= timer_tick_interval;
+      }
     }
 
     // render screen
