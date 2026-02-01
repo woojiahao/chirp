@@ -199,12 +199,15 @@ void chirp_start_emulator_loop(Chirp *chirp)
 
       if (timer_accumulator >= timer_tick_interval)
       {
-        // keep updating the timer while there were more ticks than available
+        // update timers
         chirp_update_timers(chirp);
         timer_accumulator -= timer_tick_interval;
       }
     }
 
     // render screen
+
+    // update the timing
+    last_time = now;
   }
 }
