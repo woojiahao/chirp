@@ -49,6 +49,7 @@ typedef struct Chirp
 
   // flags to indicate state for running the machine
   bool is_running;
+  bool is_paused;
   bool draw_screen;
   bool is_waiting_for_key;
 
