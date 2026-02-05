@@ -15,12 +15,13 @@ ChirpRegisters *chirp_registers_new()
   return registers;
 }
 
-uint8_t chirp_registers_read(ChirpRegisters *registers, uint16_t addr)
+// TODO: Add guardrails to prevent out of bounds access
+uint8_t chirp_registers_read(ChirpRegisters *registers, int addr)
 {
   return registers->registers[addr & 0x0FFF];
 }
 
-void chirp_registers_write(ChirpRegisters *registers, uint16_t addr, uint8_t value)
+void chirp_registers_write(ChirpRegisters *registers, int addr, uint8_t value)
 {
   registers->registers[addr & 0x0FFF] = value;
 }

@@ -15,8 +15,10 @@ typedef struct ChirpDisplay
   bool display[DISPLAY_HEIGHT][DISPLAY_WIDTH];
 } ChirpDisplay;
 
-bool chirp_get_pixel(ChirpDisplay *display, int x, int y);
-void chirp_set_pixel(ChirpDisplay *display, int x, int y, bool state);
-void chirp_flip_pixel(ChirpDisplay *display, int x, int y);
+ChirpDisplay *chirp_display_new();
+bool chirp_display_get_pixel(ChirpDisplay *display, int x, int y);
+void chirp_display_set_pixel(ChirpDisplay *display, int x, int y, bool state);
+void chirp_display_flip_pixel(ChirpDisplay *display, int x, int y);
+void chirp_display_clear(ChirpDisplay *display);
 
 #endif // CHIRP_DISPLAY_H

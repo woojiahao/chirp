@@ -61,12 +61,19 @@ Chirp *chirp_new(const char *rom_path)
   chirp->mem = chirp_mem_new();
   chirp->stack = chirp_stack_new();
   chirp->registers = chirp_registers_new();
+  chirp->display = chirp_display_new();
+  chirp->keyboard = chirp_keyboard_new();
+
   chirp->is_running = true;
+  chirp->draw_screen = true;
+  chirp->is_waiting_for_key = false;
 
   chirp->delay_timer = 0;
   chirp->sound_timer = 0;
   chirp->index_register = 0;
-  chirp->program_counter = (uint8_t)CHIRP_INSTRUCTIONS_ADDR_START;
+  chirp->program_counter = (uint16_t)CHIRP_INSTRUCTIONS_ADDR_START;
+
+  chirp->is_debug = true;
 
   chirp_load_rom(chirp, rom_path);
   chirp_load_fonts(chirp);
@@ -94,6 +101,10 @@ uint16_t chirp_fetch(Chirp *chirp)
 
   // create the instruction using bit shifting
   uint16_t instruction = ((uint16_t)first_block << 8) | second_block;
+  if (chirp->is_debug)
+  {
+    printf("reading instruction %04x\n", instruction);
+  }
 
   return instruction;
 }
@@ -109,11 +120,11 @@ void chirp_execute(Chirp *chirp, uint16_t instruction)
     {
     case 0x00E0:
       // clear screen
-      // clear_screen(chirp);
+      clear_display(chirp);
       return;
     case 0x0EE:
       // return from subroutine
-      // return_from_subroutine(chirp);
+      // subroutine_return(chirp);
       return;
     default:
       printf("invalid instruction %04X\n", instruction);
@@ -167,7 +178,7 @@ void chirp_execute(Chirp *chirp, uint16_t instruction)
   }
 }
 
-void chirp_start_emulator_loop(Chirp *chirp)
+void chirp_start_emulator_loop(Chirp *chirp, ChirpWindow *window)
 {
   const double timer_tick_interval = 1.0 / 60.0;
   const double cpu_tick_interval = 1.0 / 500.0; // TODO: make this variable
@@ -206,6 +217,11 @@ void chirp_start_emulator_loop(Chirp *chirp)
     }
 
     // render screen
+    if (chirp->draw_screen)
+    {
+      draw_display(window, chirp->display);
+      chirp->draw_screen = false;
+    }
 
     // update the timing
     last_time = now;

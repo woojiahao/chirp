@@ -11,7 +11,7 @@ typedef struct ChirpRegisters
 } ChirpRegisters;
 
 ChirpRegisters *chirp_registers_new();
-uint8_t chirp_registers_read(ChirpRegisters *registers, uint16_t addr);
-void chirp_registers_write(ChirpRegisters *registers, uint16_t addr, uint8_t value);
+uint8_t chirp_registers_read(ChirpRegisters *registers, int addr);
+void chirp_registers_write(ChirpRegisters *registers, int addr, uint8_t value);
 
 #endif // CHIRP_REGISTERS_H

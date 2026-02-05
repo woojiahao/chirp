@@ -1,5 +1,6 @@
 #include "chirp.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 int main(int argc, char *argv[])
 {
@@ -16,8 +17,25 @@ int main(int argc, char *argv[])
 
   // TODO: Add stats for how long the emulator is running for
   Chirp *chirp = chirp_new(path);
-  chirp_mem_view(chirp->mem);
-  chirp_start_emulator_loop(chirp);
+
+  printf("ROM loaded...\n");
+  printf("creating window for chirp...\n");
+
+  ChirpWindow *window = create_window();
+
+  // chirp_mem_view(chirp->mem);
+  chirp_start_emulator_loop(chirp, window);
+
+  printf("stopping chirp...\n");
+
+  // make sure to release all resources
+  close_window(window);
+  free(window);
+  free(chirp->mem);
+  free(chirp->registers);
+  free(chirp->stack);
+  free(chirp->display);
+  free(chirp);
 
   return 0;
 }

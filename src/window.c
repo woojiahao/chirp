@@ -79,7 +79,7 @@ void draw_display(ChirpWindow *window, ChirpDisplay *display)
   {
     for (int x = 0; x < DISPLAY_WIDTH; x++)
     {
-      draw_pixel(window, x, y, chirp_get_pixel(display, x, y));
+      draw_pixel(window, x, y, chirp_display_get_pixel(display, x, y));
     }
   }
   SDL_RenderPresent(window->renderer);

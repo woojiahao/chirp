@@ -6,6 +6,7 @@ LDFLAGS =
 # For MacOS linking to SDL3
 CFLAGS += -I/usr/local/include/SDL3
 LDFLAGS += -L/usr/local/lib -lSDL3
+LDFLAGS += -Wl,-rpath,/usr/local/lib
 
 OUT_DIR = out
 BIN     = chirp
