@@ -1,7 +1,6 @@
 #ifndef CHIRP_DISPLAY_H
 #define CHIRP_DISPLAY_H
 
-#include "chirp_t.h"
 #include <stdbool.h>
 
 #define DISPLAY_WIDTH 64
