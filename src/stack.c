@@ -40,7 +40,7 @@ uint16_t chirp_stack_pop(ChirpStack *stack)
     exit(1);
   }
 
-  uint16_t value = stack->stack[stack->ptr];
+  uint16_t value = stack->stack[stack->ptr - 1];
 
   stack->stack[stack->ptr--] = 0;
   stack->current_size--;
@@ -57,7 +57,7 @@ uint16_t chirp_stack_peek(ChirpStack *stack)
     exit(1);
   }
 
-  return stack->stack[stack->ptr];
+  return stack->stack[stack->ptr - 1];
 }
 
 bool chirp_stack_is_empty(ChirpStack *stack)

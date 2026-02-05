@@ -57,32 +57,21 @@ void close_window(ChirpWindow *window)
   SDL_Quit();
 }
 
-void draw_pixel(ChirpWindow *window, int x, int y, bool pixel)
-{
-  // in CHIP-8, the pixels don't wrap around, so we just ignore anything that exceeds the bounds
-  if (pixel)
-  {
-    SDL_FRect rect = (SDL_FRect){.x = x * UPSCALE_FACTOR, .y = y * UPSCALE_FACTOR, .w = UPSCALE_FACTOR, .h = UPSCALE_FACTOR};
-    SDL_SetRenderDrawColor(window->renderer, 255, 255, 255, 255);
-    SDL_RenderFillRect(window->renderer, &rect);
-  }
-  else
-  {
-    SDL_FRect rect = (SDL_FRect){.x = (x + y) * UPSCALE_FACTOR, .y = y * UPSCALE_FACTOR, .w = UPSCALE_FACTOR, .h = UPSCALE_FACTOR};
-    SDL_SetRenderDrawColor(window->renderer, 0, 0, 0, 255);
-    SDL_RenderFillRect(window->renderer, &rect);
-  }
-}
-
 void draw_display(ChirpWindow *window, ChirpDisplay *display)
 {
   SDL_SetRenderDrawColor(window->renderer, 0, 0, 0, 255);
   SDL_RenderClear(window->renderer);
+
   for (int y = 0; y < DISPLAY_HEIGHT; y++)
   {
     for (int x = 0; x < DISPLAY_WIDTH; x++)
     {
-      draw_pixel(window, x, y, chirp_display_get_pixel(display, x, y));
+      if (chirp_display_get_pixel(display, x, y))
+      {
+        SDL_FRect rect = (SDL_FRect){.x = x * UPSCALE_FACTOR, .y = y * UPSCALE_FACTOR, .w = UPSCALE_FACTOR, .h = UPSCALE_FACTOR};
+        SDL_SetRenderDrawColor(window->renderer, 255, 255, 255, 255);
+        SDL_RenderFillRect(window->renderer, &rect);
+      }
     }
   }
   SDL_RenderPresent(window->renderer);

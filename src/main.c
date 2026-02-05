@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
 
   ChirpWindow *window = create_window();
 
-  // chirp_mem_view(chirp->mem);
+  chirp_mem_view(chirp->mem);
   chirp_start_emulator_loop(chirp, window);
 
   printf("stopping chirp...\n");

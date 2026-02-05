@@ -34,10 +34,10 @@ void chirp_load_rom(Chirp *chirp, const char *rom_path)
       chirp_mem_write(chirp->mem, i + CHIRP_INSTRUCTIONS_ADDR_START, rom_contents[i]);
     }
 
-    for (int i = 0; i < rom_size; i += 2)
-    {
-      printf("%04x\n", rom_contents[i] << 8 | rom_contents[i + 1]);
-    }
+    // for (int i = 0; i < rom_size; i += 2)
+    // {
+    //   printf("%04x\n", rom_contents[i] << 8 | rom_contents[i + 1]);
+    // }
 
     fclose(rom);
     free(rom_contents);
@@ -122,6 +122,12 @@ void chirp_execute(Chirp *chirp, uint16_t instruction)
   uint8_t n = instruction & 0x000F;
   uint8_t nn = instruction & 0x00FF;
   uint16_t nnn = instruction & 0x0FFF;
+
+  printf(
+      "executing instruction %04X with PC = %04X and top of stack as %04X\n",
+      instruction,
+      chirp->program_counter,
+      chirp_stack_is_empty(chirp->stack) ? 0x0000 : chirp_stack_peek(chirp->stack));
 
   switch (opcode)
   {
