@@ -45,7 +45,7 @@ void set_vx_eq_delay(Chirp *chirp, int vx);                  // FX07
 // set index
 void set_index_eq_nnn(Chirp *chirp, uint16_t nnn);     // ANNN
 void set_index_eq_index_plus_vx(Chirp *chirp, int vx); // FX1E
-void set_index_eq_vx(Chirp *chirp, int vx);            // FX29
+void set_index_to_font(Chirp *chirp, int vx);            // FX29
 
 // registers
 void set_registers(Chirp *chirp, int vx);  // FX55

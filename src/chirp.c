@@ -34,6 +34,11 @@ void chirp_load_rom(Chirp *chirp, const char *rom_path)
       chirp_mem_write(chirp->mem, i + CHIRP_INSTRUCTIONS_ADDR_START, rom_contents[i]);
     }
 
+    for (int i = 0; i < rom_size; i += 2)
+    {
+      printf("%04x\n", rom_contents[i] << 8 | rom_contents[i + 1]);
+    }
+
     fclose(rom);
     free(rom_contents);
   }
@@ -65,7 +70,7 @@ Chirp *chirp_new(const char *rom_path)
   chirp->keyboard = chirp_keyboard_new();
 
   chirp->is_running = true;
-  chirp->draw_screen = true;
+  chirp->need_draw_screen = true;
   chirp->is_waiting_for_key = false;
 
   chirp->delay_timer = 0;
@@ -103,7 +108,7 @@ uint16_t chirp_fetch(Chirp *chirp)
   uint16_t instruction = ((uint16_t)first_block << 8) | second_block;
   if (chirp->is_debug)
   {
-    printf("reading instruction %04x\n", instruction);
+    // printf("reading instruction %04x\n", instruction);
   }
 
   return instruction;
@@ -112,8 +117,8 @@ uint16_t chirp_fetch(Chirp *chirp)
 void chirp_execute(Chirp *chirp, uint16_t instruction)
 {
   uint16_t opcode = instruction & 0xF000;
-  uint8_t vx = instruction & 0x0F00;
-  uint8_t vy = instruction & 0x00F0;
+  uint8_t vx = (instruction & 0x0F00) >> 8;
+  uint8_t vy = (instruction & 0x00F0) >> 4;
   uint8_t n = instruction & 0x000F;
   uint8_t nn = instruction & 0x00FF;
   uint16_t nnn = instruction & 0x0FFF;
@@ -127,7 +132,7 @@ void chirp_execute(Chirp *chirp, uint16_t instruction)
       // clear screen
       clear_display(chirp);
       return;
-    case 0x0EE:
+    case 0x00EE:
       // return from subroutine
       subroutine_return(chirp);
       return;
@@ -153,7 +158,7 @@ void chirp_execute(Chirp *chirp, uint16_t instruction)
     return;
 
   case 0x5000:
-    skip_if_vx_eq_vy(chirp, vx, nn);
+    skip_if_vx_eq_vy(chirp, vx, vy);
     return;
 
   case 0x6000:
@@ -254,7 +259,7 @@ void chirp_execute(Chirp *chirp, uint16_t instruction)
       get_key(chirp, vx);
       return;
     case 0x29:
-      set_index_eq_vx(chirp, vx);
+      set_index_to_font(chirp, vx);
       return;
     case 0x33:
       binary_coded_decimal_conversion(chirp, vx);
@@ -357,6 +362,10 @@ emulator_loop:
         {
           // fetch instruction
           uint16_t instruction = chirp_fetch(chirp);
+          // if (instruction == 0x0000)
+          // {
+          //   goto emulator_loop;
+          // }
 
           // execute instruction
           chirp_execute(chirp, instruction);
@@ -373,10 +382,10 @@ emulator_loop:
     }
 
     // render screen
-    if (chirp->draw_screen)
+    if (chirp->need_draw_screen)
     {
       draw_display(window, chirp->display);
-      chirp->draw_screen = false;
+      chirp->need_draw_screen = false;
     }
 
     // update the timing

@@ -15,9 +15,9 @@ ChirpDisplay *chirp_display_new()
 {
   ChirpDisplay *display = (ChirpDisplay *)malloc(sizeof(ChirpDisplay));
 
-  for (int y = 0; y <= DISPLAY_HEIGHT; y++)
+  for (int y = 0; y < DISPLAY_HEIGHT; y++)
   {
-    for (int x = 0; x <= DISPLAY_WIDTH; x++)
+    for (int x = 0; x < DISPLAY_WIDTH; x++)
     {
       display->display[y][x] = false;
     }
@@ -50,7 +50,6 @@ void chirp_display_clear(ChirpDisplay *display)
   {
     for (int x = 0; x < DISPLAY_WIDTH; x++)
     {
-      printf("x is %d, y is %d, display value is %d\n", x, y, display->display[x][y]);
       chirp_display_set_pixel(display, x, y, false);
     }
   }

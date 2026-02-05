@@ -6,7 +6,11 @@ void clear_display(Chirp *chirp)
 {
   // 00E0
   chirp_display_clear(chirp->display);
-  chirp->draw_screen = true;
+  if (chirp->is_debug)
+  {
+    SDL_Log("clearing display\n");
+  }
+  chirp->need_draw_screen = true;
 }
 
 void draw(Chirp *chirp, int vx, int vy, uint8_t n)
@@ -19,6 +23,11 @@ void draw(Chirp *chirp, int vx, int vy, uint8_t n)
 
   // set VF = 0
   chirp_registers_write(chirp->registers, 0xF, 0);
+
+  if (chirp->is_debug)
+  {
+    SDL_Log("drawing with position (%d, %d), with %d rows\n", x, y, n);
+  }
 
   // draw row by row
   for (int y_v = 0; y_v < n; y_v++)
@@ -35,17 +44,27 @@ void draw(Chirp *chirp, int vx, int vy, uint8_t n)
       {
         break;
       }
-      uint8_t pixel_bit = pixel & (1 << x_v);
-      if (pixel_bit == 1)
+      uint8_t pixel_bit = pixel & (1 << (7 - x_v));
+      if (pixel_bit != 0)
       {
         if (chirp_display_get_pixel(chirp->display, x + x_v, y + y_v))
         {
           chirp_registers_write(chirp->registers, 0xF, 1);
+          chirp_display_set_pixel(chirp->display, x + x_v, y + y_v, false);
+        }
+        else
+        {
+          chirp_display_set_pixel(chirp->display, x + x_v, y + y_v, true);
         }
       }
-      chirp_display_flip_pixel(chirp->display, x + x_v, y + y_v);
+      else
+      {
+        chirp_display_set_pixel(chirp->display, x + x_v, y + y_v, false);
+      }
     }
   }
+
+  chirp->need_draw_screen = true;
 }
 
 void subroutine_return(Chirp *chirp)
@@ -53,6 +72,10 @@ void subroutine_return(Chirp *chirp)
   // 00EE
 
   uint16_t popped_addr = chirp_stack_pop(chirp->stack);
+  if (chirp->is_debug)
+  {
+    SDL_Log("returning from subroutine, back to %04X\n", popped_addr);
+  }
   chirp->program_counter = popped_addr;
 }
 
@@ -60,6 +83,10 @@ void subroutine_call(Chirp *chirp, uint16_t nnn)
 {
   // 2NNN
 
+  if (chirp->is_debug)
+  {
+    SDL_Log("calling subroutine at %04X, pushed %04X on stack\n", nnn, chirp->program_counter);
+  }
   chirp_stack_push(chirp->stack, chirp->program_counter);
   chirp->program_counter = nnn;
 }
@@ -68,6 +95,10 @@ void jump(Chirp *chirp, uint16_t nnn)
 {
   // 1NNN
 
+  if (chirp->is_debug)
+  {
+    SDL_Log("jumping to %04X, current program counter is %04X\n", nnn, chirp->program_counter);
+  }
   chirp->program_counter = nnn;
 }
 
@@ -76,7 +107,16 @@ void jump_with_offset(Chirp *chirp, uint16_t nnn)
   // TODO: Make this configurable with VX potentially
   // BNNN
 
-  chirp->program_counter = chirp_registers_read(chirp->registers, 0x0) + nnn;
+  uint16_t destination = (uint16_t)chirp_registers_read(chirp->registers, 0x0) + nnn;
+  if (chirp->is_debug)
+  {
+    SDL_Log(
+        "jumping to %04X with offset of %d, current program counter is %04X\n",
+        destination,
+        nnn,
+        chirp->program_counter);
+  }
+  chirp->program_counter = destination;
 }
 
 void skip_if_vx_eq_nn(Chirp *chirp, int vx, uint8_t nn)
@@ -118,7 +158,7 @@ void skip_if_vx_neq_vy(Chirp *chirp, int vx, int vy)
 void skip_if_key_eq_vx(Chirp *chirp, int vx)
 {
   // EX9E
-  uint8_t vx_value = chirp_mem_read(chirp->mem, vx);
+  uint8_t vx_value = chirp_registers_read(chirp->registers, vx);
   if (chirp_keyboard_read(chirp->keyboard, vx_value))
   {
     chirp->program_counter += 2;
@@ -128,7 +168,7 @@ void skip_if_key_eq_vx(Chirp *chirp, int vx)
 void skip_if_key_neq_vx(Chirp *chirp, int vx)
 {
   // EX9E
-  uint8_t vx_value = chirp_mem_read(chirp->mem, vx);
+  uint8_t vx_value = chirp_registers_read(chirp->registers, vx);
   if (!chirp_keyboard_read(chirp->keyboard, vx_value))
   {
     chirp->program_counter += 2;
@@ -222,7 +262,7 @@ void set_vx_eq_vy_shift_right(Chirp *chirp, int vx, int vy)
   uint8_t vy_value = chirp_registers_read(chirp->registers, vy);
   uint8_t shifted_bit = vy_value & 1;
   uint8_t new_vx_value = vy_value >> 1;
-  if (shifted_bit == 1)
+  if (shifted_bit != 0)
   {
     chirp_registers_write(chirp->registers, 0xF, 1);
   }
@@ -255,7 +295,7 @@ void set_vx_eq_vy_shift_left(Chirp *chirp, int vx, int vy)
   uint8_t vy_value = chirp_registers_read(chirp->registers, vy);
   uint8_t shifted_bit = vy_value & 0x80;
   uint8_t new_vx_value = vy_value << 1;
-  if (shifted_bit == 1)
+  if (shifted_bit != 0)
   {
     chirp_registers_write(chirp->registers, 0xF, 1);
   }
@@ -294,11 +334,12 @@ void set_index_eq_index_plus_vx(Chirp *chirp, int vx)
   chirp->index_register += vx_value;
 }
 
-void set_index_eq_vx(Chirp *chirp, int vx)
+void set_index_to_font(Chirp *chirp, int vx)
 {
   // FX29
   uint8_t vx_value = chirp_registers_read(chirp->registers, vx);
-  chirp->index_register = vx_value;
+  uint8_t hex = CHIRP_FONTS_ADDR_START + vx_value * 0x5;
+  chirp->index_register = hex;
 }
 
 void set_registers(Chirp *chirp, int vx)
@@ -324,7 +365,6 @@ void load_registers(Chirp *chirp, int vx)
 void get_key(Chirp *chirp, int vx)
 {
   // FX0A
-  chirp->program_counter -= 2; // decrement to avoid progress
   chirp->is_waiting_for_key = true;
   // rest of implementation set in emulator loop on user input
 }
