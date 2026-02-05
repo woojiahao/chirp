@@ -30,7 +30,6 @@ int main(int argc, char *argv[])
 
   // make sure to release all resources
   close_window(window);
-  free(window);
   free(chirp->mem);
   free(chirp->registers);
   free(chirp->stack);

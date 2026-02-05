@@ -288,16 +288,19 @@ void chirp_start_emulator_loop(Chirp *chirp, ChirpWindow *window)
   double timer_accumulator = 0.0;
   double cpu_accumulator = 0.0;
 
-  clock_t last_time = clock();
+  uint64_t last_time = SDL_GetPerformanceCounter();
+  uint64_t freq = SDL_GetPerformanceFrequency();
 
   SDL_Event e;
   SDL_zero(e);
 
+  bool should_render = false;
+
 emulator_loop:
   while (chirp->is_running)
   {
-    clock_t now = clock();
-    double dt = (double)(now - last_time) / CLOCKS_PER_SEC;
+    uint64_t now = SDL_GetPerformanceCounter();
+    double dt = (double)(now - last_time) / freq;
 
     timer_accumulator += dt;
     cpu_accumulator += dt;
@@ -384,11 +387,12 @@ emulator_loop:
         // update timers
         chirp_update_timers(chirp);
         timer_accumulator -= timer_tick_interval;
+        should_render = true;
       }
     }
 
     // render screen
-    if (chirp->need_draw_screen)
+    if (should_render && chirp->need_draw_screen)
     {
       draw_display(window, chirp->display);
       chirp->need_draw_screen = false;

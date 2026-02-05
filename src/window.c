@@ -28,6 +28,7 @@ ChirpWindow *create_window()
     exit(1);
   }
   SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+  SDL_SetRenderVSync(renderer, 1);
 
   ChirpWindow *chirp_window = (ChirpWindow *)malloc(sizeof(ChirpWindow));
   if (chirp_window == NULL)
@@ -62,6 +63,7 @@ void draw_display(ChirpWindow *window, ChirpDisplay *display)
   SDL_SetRenderDrawColor(window->renderer, 0, 0, 0, 255);
   SDL_RenderClear(window->renderer);
 
+  SDL_SetRenderDrawColor(window->renderer, 255, 255, 255, 255);
   for (int y = 0; y < DISPLAY_HEIGHT; y++)
   {
     for (int x = 0; x < DISPLAY_WIDTH; x++)
@@ -69,7 +71,6 @@ void draw_display(ChirpWindow *window, ChirpDisplay *display)
       if (chirp_display_get_pixel(display, x, y))
       {
         SDL_FRect rect = (SDL_FRect){.x = x * UPSCALE_FACTOR, .y = y * UPSCALE_FACTOR, .w = UPSCALE_FACTOR, .h = UPSCALE_FACTOR};
-        SDL_SetRenderDrawColor(window->renderer, 255, 255, 255, 255);
         SDL_RenderFillRect(window->renderer, &rect);
       }
     }

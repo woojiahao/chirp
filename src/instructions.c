@@ -47,19 +47,12 @@ void draw(Chirp *chirp, int vx, int vy, uint8_t n)
       uint8_t pixel_bit = pixel & (1 << (7 - x_v));
       if (pixel_bit != 0)
       {
-        if (chirp_display_get_pixel(chirp->display, x + x_v, y + y_v))
+        bool cur = chirp_display_get_pixel(chirp->display, x + x_v, y + y_v);
+        if (cur)
         {
           chirp_registers_write(chirp->registers, 0xF, 1);
-          chirp_display_set_pixel(chirp->display, x + x_v, y + y_v, false);
         }
-        else
-        {
-          chirp_display_set_pixel(chirp->display, x + x_v, y + y_v, true);
-        }
-      }
-      else
-      {
-        chirp_display_set_pixel(chirp->display, x + x_v, y + y_v, false);
+        chirp_display_set_pixel(chirp->display, x + x_v, y + y_v, !cur);
       }
     }
   }
