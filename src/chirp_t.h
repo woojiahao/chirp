@@ -9,11 +9,6 @@
 #include "registers.h"
 #include "keyboard.h"
 
-#define NIBBLE_ONE 0xF000
-#define NIBBLE_TWO 0x0F00
-#define NIBBLE_THREE 0x00F0
-#define NIBBLE_FOUR 0x000F
-
 // list taken from https://tobiasvl.github.io/blog/write-a-chip-8-emulator/#font
 const static uint8_t CHIRP_FONTS[CHIRP_FONTS_BYTES] = {
     0xF0, 0x90, 0x90, 0x90, 0xF0, // 0

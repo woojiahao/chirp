@@ -219,7 +219,6 @@ void set_vx_eq_vx_minus_vy(Chirp *chirp, int vx, int vy)
 void set_vx_eq_vy_shift_right(Chirp *chirp, int vx, int vy)
 {
   // 8XY6
-  uint8_t vx_value = chirp_registers_read(chirp->registers, vx);
   uint8_t vy_value = chirp_registers_read(chirp->registers, vy);
   uint8_t shifted_bit = vy_value & 1;
   uint8_t new_vx_value = vy_value >> 1;
@@ -253,7 +252,6 @@ void set_vx_eq_vy_minus_vx(Chirp *chirp, int vx, int vy)
 void set_vx_eq_vy_shift_left(Chirp *chirp, int vx, int vy)
 {
   // 8XYE
-  uint8_t vx_value = chirp_registers_read(chirp->registers, vx);
   uint8_t vy_value = chirp_registers_read(chirp->registers, vy);
   uint8_t shifted_bit = vy_value & 0x80;
   uint8_t new_vx_value = vy_value << 1;

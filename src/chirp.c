@@ -111,7 +111,12 @@ uint16_t chirp_fetch(Chirp *chirp)
 
 void chirp_execute(Chirp *chirp, uint16_t instruction)
 {
-  uint16_t opcode = instruction & NIBBLE_ONE;
+  uint16_t opcode = instruction & 0xF000;
+  uint8_t vx = instruction & 0x0F00;
+  uint8_t vy = instruction & 0x00F0;
+  uint8_t n = instruction & 0x000F;
+  uint8_t nn = instruction & 0x00FF;
+  uint16_t nnn = instruction & 0x0FFF;
 
   switch (opcode)
   {
@@ -124,7 +129,7 @@ void chirp_execute(Chirp *chirp, uint16_t instruction)
       return;
     case 0x0EE:
       // return from subroutine
-      // subroutine_return(chirp);
+      subroutine_return(chirp);
       return;
     default:
       printf("invalid instruction %04X\n", instruction);
@@ -132,48 +137,135 @@ void chirp_execute(Chirp *chirp, uint16_t instruction)
     }
 
   case 0x1000:
+    jump(chirp, nnn);
     return;
 
   case 0x2000:
+    subroutine_call(chirp, nnn);
     return;
 
   case 0x3000:
+    skip_if_vx_eq_nn(chirp, vx, nn);
     return;
 
   case 0x4000:
+    skip_if_vx_neq_nn(chirp, vx, nn);
     return;
 
   case 0x5000:
+    skip_if_vx_eq_vy(chirp, vx, nn);
     return;
 
   case 0x6000:
+    set_vx_eq_nn(chirp, vx, nn);
     return;
 
   case 0x7000:
+    set_vx_eq_vx_plus_nn(chirp, vx, nn);
     return;
 
   case 0x8000:
+    switch (n)
+    {
+    case 0x0:
+      set_vx_to_vy(chirp, vx, vy);
+      return;
+    case 0x1:
+      set_vx_eq_vx_or_vy(chirp, vx, vy);
+      return;
+    case 0x2:
+      set_vx_eq_vx_and_vy(chirp, vx, vy);
+      return;
+    case 0x3:
+      set_vx_eq_vx_xor_vy(chirp, vx, vy);
+      return;
+    case 0x4:
+      set_vx_eq_vx_plus_vy(chirp, vx, vy);
+      return;
+    case 0x5:
+      set_vx_eq_vx_minus_vy(chirp, vx, vy);
+      return;
+    case 0x6:
+      set_vx_eq_vy_shift_right(chirp, vx, vy);
+      return;
+    case 0x7:
+      set_vx_eq_vy_minus_vx(chirp, vx, vy);
+      return;
+    case 0xE:
+      set_vx_eq_vy_shift_left(chirp, vx, vy);
+      return;
+    default:
+      printf("invalid instruction %04X\n", instruction);
+      exit(1);
+    }
     return;
 
   case 0x9000:
+    skip_if_vx_neq_vy(chirp, vx, vy);
     return;
 
   case 0xA000:
+    set_index_eq_nnn(chirp, nnn);
     return;
 
   case 0xB000:
+    jump_with_offset(chirp, nnn);
     return;
 
   case 0xC000:
+    set_vx_eq_random(chirp, vx, nn);
     return;
 
   case 0xD000:
+    draw(chirp, vx, vy, n);
     return;
 
   case 0xE000:
+    switch (nn)
+    {
+    case 0x9E:
+      skip_if_key_eq_vx(chirp, vx);
+      return;
+    case 0xA1:
+      skip_if_key_neq_vx(chirp, vx);
+      return;
+    default:
+      printf("invalid instruction %04X\n", instruction);
+      exit(1);
+    }
     return;
 
   case 0xF000:
+    switch (nn)
+    {
+    case 0x07:
+      set_vx_eq_delay(chirp, vx);
+      return;
+    case 0x15:
+      set_delay_eq_vx(chirp, vx);
+      return;
+    case 0x18:
+      set_sound_eq_vx(chirp, vx);
+      return;
+    case 0x1E:
+      set_index_eq_index_plus_vx(chirp, vx);
+      return;
+    case 0x0A:
+      get_key(chirp, vx);
+      return;
+    case 0x29:
+      set_index_eq_vx(chirp, vx);
+      return;
+    case 0x33:
+      binary_coded_decimal_conversion(chirp, vx);
+      return;
+    case 0x55:
+      set_registers(chirp, vx);
+      return;
+    case 0x65:
+      load_registers(chirp, vx);
+      return;
+    }
     return;
   }
 }
