@@ -58,7 +58,7 @@ void chirp_load_fonts(Chirp *chirp)
 }
 
 // loads all the necessary state for the CHIP-8 emulator
-Chirp *chirp_new(const char *rom_path)
+Chirp *chirp_new(ChirpConfig *config)
 {
   Chirp *chirp = (Chirp *)malloc(sizeof(Chirp));
 
@@ -78,9 +78,9 @@ Chirp *chirp_new(const char *rom_path)
   chirp->index_register = 0;
   chirp->program_counter = (uint16_t)CHIRP_INSTRUCTIONS_ADDR_START;
 
-  chirp->is_debug = true;
+  chirp->config = config;
 
-  chirp_load_rom(chirp, rom_path);
+  chirp_load_rom(chirp, config->rom_path);
   chirp_load_fonts(chirp);
 
   return chirp;
@@ -106,7 +106,7 @@ uint16_t chirp_fetch(Chirp *chirp)
 
   // create the instruction using bit shifting
   uint16_t instruction = ((uint16_t)first_block << 8) | second_block;
-  if (chirp->is_debug)
+  if (chirp->config->is_debug)
   {
     // printf("reading instruction %04x\n", instruction);
   }
@@ -123,11 +123,14 @@ void chirp_execute(Chirp *chirp, uint16_t instruction)
   uint8_t nn = instruction & 0x00FF;
   uint16_t nnn = instruction & 0x0FFF;
 
-  printf(
-      "executing instruction %04X with PC = %04X and top of stack as %04X\n",
-      instruction,
-      chirp->program_counter,
-      chirp_stack_is_empty(chirp->stack) ? 0x0000 : chirp_stack_peek(chirp->stack));
+  if (chirp->config->is_debug)
+  {
+    printf(
+        "executing instruction %04X with PC = %04X and top of stack as %04X\n",
+        instruction,
+        chirp->program_counter,
+        chirp_stack_is_empty(chirp->stack) ? 0x0000 : chirp_stack_peek(chirp->stack));
+  }
 
   switch (opcode)
   {
@@ -284,7 +287,7 @@ void chirp_execute(Chirp *chirp, uint16_t instruction)
 void chirp_start_emulator_loop(Chirp *chirp, ChirpWindow *window)
 {
   const double timer_tick_interval = 1.0 / 60.0;
-  const double cpu_tick_interval = 1.0 / 500.0; // TODO: make this variable
+  const double cpu_tick_interval = 1.0 / 800.0; // TODO: make this variable
   double timer_accumulator = 0.0;
   double cpu_accumulator = 0.0;
 
@@ -294,13 +297,13 @@ void chirp_start_emulator_loop(Chirp *chirp, ChirpWindow *window)
   SDL_Event e;
   SDL_zero(e);
 
-  bool should_render = false;
-
 emulator_loop:
   while (chirp->is_running)
   {
     uint64_t now = SDL_GetPerformanceCounter();
     double dt = (double)(now - last_time) / freq;
+    if (dt > 0.1)
+      dt = 0.1;
 
     timer_accumulator += dt;
     cpu_accumulator += dt;
@@ -371,10 +374,6 @@ emulator_loop:
         {
           // fetch instruction
           uint16_t instruction = chirp_fetch(chirp);
-          // if (instruction == 0x0000)
-          // {
-          //   goto emulator_loop;
-          // }
 
           // execute instruction
           chirp_execute(chirp, instruction);
@@ -387,15 +386,14 @@ emulator_loop:
         // update timers
         chirp_update_timers(chirp);
         timer_accumulator -= timer_tick_interval;
-        should_render = true;
-      }
-    }
 
-    // render screen
-    if (should_render && chirp->need_draw_screen)
-    {
-      draw_display(window, chirp->display);
-      chirp->need_draw_screen = false;
+        // render screen at 60Hz
+        if (chirp->need_draw_screen)
+        {
+          draw_display(window, chirp->display);
+          chirp->need_draw_screen = false;
+        }
+      }
     }
 
     // update the timing

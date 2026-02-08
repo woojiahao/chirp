@@ -29,6 +29,18 @@ const static uint8_t CHIRP_FONTS[CHIRP_FONTS_BYTES] = {
     0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 };
 
+typedef struct ChirpConfig
+{
+  const char *rom_path;                // path to the rom; must be set by user
+  bool is_debug;                       // defaults to false
+  bool shift_vx;                       // affects 8XY6 and 8XYE; defaults to false
+  bool jump_with_nn;                   // affects BNNN; defaults to false
+  bool set_registers_increment_index;  // affects FX55; defaults to false
+  bool load_registers_increment_index; // affects FX65; defaults to false
+  bool has_audio;                      // defaults to false
+  int cpu_speed;                       // defaults to 500
+} ChirpConfig;
+
 typedef struct Chirp
 {
   ChirpMemory *mem;
@@ -48,8 +60,7 @@ typedef struct Chirp
   bool need_draw_screen;
   bool is_waiting_for_key;
 
-  // flags to support application running (includes config flags)
-  bool is_debug;
+  ChirpConfig *config;
 } Chirp;
 
 #endif

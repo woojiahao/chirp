@@ -4,7 +4,7 @@
 #include "chirp_t.h"
 #include "instructions.h"
 
-Chirp *chirp_new(const char *rom_path);
+Chirp *chirp_new(ChirpConfig *config);
 
 void chirp_load_rom(Chirp *chirp, const char *rom_path);
 void chirp_load_fonts(Chirp *chirp);
