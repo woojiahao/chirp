@@ -1,36 +1,39 @@
-CC      = gcc
-CFLAGS  = -Wall -Wextra -Werror -std=c11
-CFLAGS += -Wno-unused-parameter
-LDFLAGS =
+CC      ?= gcc
+OUT_DIR := out
+BIN     := chirp
+SRC_DIR := src
 
-# For MacOS linking to SDL3
-CFLAGS += -I/usr/local/include/SDL3
-LDFLAGS += -L/usr/local/lib -lSDL3
-LDFLAGS += -Wl,-rpath,/usr/local/lib
+SRC := $(wildcard $(SRC_DIR)/*.c)
+OBJ := $(patsubst $(SRC_DIR)/%.c,$(OUT_DIR)/%.o,$(SRC))
+DEPS := $(OBJ:.o=.d)
 
-OUT_DIR = out
-BIN     = chirp
-SRC_DIR = src
+# Base flags
+CFLAGS  := -Wall -Wextra -Werror -std=c11 -Wno-unused-parameter
+CFLAGS  += -MMD -MP
+LDFLAGS :=
 
-SRC = $(wildcard $(SRC_DIR)/*.c)
-OBJ = $(patsubst $(SRC_DIR)/%.c,$(OUT_DIR)/%.o,$(SRC))
+# SDL3 flags (portable)
+SDL_CFLAGS  := $(shell pkg-config --cflags sdl3 2>/dev/null)
+SDL_LDFLAGS := $(shell pkg-config --libs sdl3 2>/dev/null)
 
-CFLAGS += -MMD -MP
-DEPS = $(OBJ:.o=.d)
+# Fail early if SDL3 isn't found
+ifeq ($(strip $(SDL_CFLAGS)),)
+$(error SDL3 not found. Install SDL3 development files and ensure pkg-config can find sdl3)
+endif
+
+CFLAGS  += $(SDL_CFLAGS)
+LDFLAGS += $(SDL_LDFLAGS)
 
 .PHONY: all clean
 
 all: $(OUT_DIR)/$(BIN)
 
-# Link
 $(OUT_DIR)/$(BIN): $(OBJ)
 	$(CC) $(OBJ) -o $@ $(LDFLAGS)
 
-# Compile
 $(OUT_DIR)/%.o: $(SRC_DIR)/%.c | $(OUT_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Ensure out/ exists
 $(OUT_DIR):
 	mkdir -p $(OUT_DIR)
 
