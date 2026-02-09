@@ -953,7 +953,7 @@ void set_sound_eq_vx(Chirp* chirp, const int x)
 /**
  * Instruction: FX0A
  *
- * Blocks CPU processing until key corresponding to X is pressed.
+ * Blocks CPU processing until any key is pressed and store into VX.
  */
 void get_key(Chirp* chirp, const int x)
 {
