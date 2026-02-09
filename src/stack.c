@@ -2,10 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-ChirpStack *chirp_stack_new()
+ChirpStack* chirp_stack_new()
 {
   // we don't allocate the inner array because it's fixed size
-  ChirpStack *chirp_stack = (ChirpStack *)malloc(sizeof(ChirpStack));
+  ChirpStack* chirp_stack = malloc(sizeof(ChirpStack));
   chirp_stack->current_size = 0;
   chirp_stack->ptr = 0;
 
@@ -18,7 +18,7 @@ ChirpStack *chirp_stack_new()
   return chirp_stack;
 }
 
-void chirp_stack_push(ChirpStack *stack, uint16_t element)
+void chirp_stack_push(ChirpStack* stack, const uint16_t element)
 {
   if (stack->current_size == CHIRP_STACK_SIZE)
   {
@@ -31,7 +31,7 @@ void chirp_stack_push(ChirpStack *stack, uint16_t element)
   stack->current_size++;
 }
 
-uint16_t chirp_stack_pop(ChirpStack *stack)
+uint16_t chirp_stack_pop(ChirpStack* stack)
 {
   if (stack->current_size == 0)
   {
@@ -48,7 +48,7 @@ uint16_t chirp_stack_pop(ChirpStack *stack)
   return value;
 }
 
-uint16_t chirp_stack_peek(ChirpStack *stack)
+uint16_t chirp_stack_peek(const ChirpStack* stack)
 {
   if (stack->current_size == 0)
   {
@@ -60,12 +60,12 @@ uint16_t chirp_stack_peek(ChirpStack *stack)
   return stack->stack[stack->ptr - 1];
 }
 
-bool chirp_stack_is_empty(ChirpStack *stack)
+bool chirp_stack_is_empty(const ChirpStack* stack)
 {
   return stack->current_size == 0;
 }
 
-bool chirp_stack_is_full(ChirpStack *stack)
+bool chirp_stack_is_full(const ChirpStack* stack)
 {
   return stack->current_size == CHIRP_STACK_SIZE;
 }
