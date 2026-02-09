@@ -496,17 +496,7 @@ void set_vx_eq_vx_plus_vy(Chirp* chirp, const int x, const int y)
   const uint8_t x_value = chirp_registers_read(chirp->registers, x);
   const uint8_t y_value = chirp_registers_read(chirp->registers, y);
   const uint16_t sum = x_value + y_value;
-  bool has_overflow = false;
-
-  if (sum > 255)
-  {
-    has_overflow = true;
-    chirp_registers_write(chirp->registers, 0xF, 1);
-  }
-  else
-  {
-    chirp_registers_write(chirp->registers, 0xF, 0);
-  }
+  const bool has_overflow = sum > 255;
 
   const uint8_t result = sum & 0xFF;
 
@@ -525,6 +515,8 @@ void set_vx_eq_vx_plus_vy(Chirp* chirp, const int x, const int y)
   }
 
   chirp_registers_write(chirp->registers, x, result);
+
+  chirp_registers_write(chirp->registers, 0xF, has_overflow ? 1 : 0);
 }
 
 /**
@@ -538,17 +530,8 @@ void set_vx_eq_vx_minus_vy(Chirp* chirp, const int x, const int y)
 {
   const uint8_t x_value = chirp_registers_read(chirp->registers, x);
   const uint8_t y_value = chirp_registers_read(chirp->registers, y);
-  bool has_underflow = 0;
+  const bool has_carry = x_value >= y_value;
 
-  if (x_value > y_value)
-  {
-    has_underflow = true;
-    chirp_registers_write(chirp->registers, 0xF, 1);
-  }
-  else
-  {
-    chirp_registers_write(chirp->registers, 0xF, 0);
-  }
   const uint8_t result = x_value - y_value;
 
   if (chirp->config->is_debug)
@@ -558,7 +541,7 @@ void set_vx_eq_vx_minus_vy(Chirp* chirp, const int x, const int y)
       x,
       x,
       y,
-      has_underflow
+      has_carry
         ? "with underflow"
         : "without underflow",
       result
@@ -566,6 +549,8 @@ void set_vx_eq_vx_minus_vy(Chirp* chirp, const int x, const int y)
   }
 
   chirp_registers_write(chirp->registers, x, result);
+
+  chirp_registers_write(chirp->registers, 0xF, has_carry ? 1 : 0);
 }
 
 /**
@@ -583,8 +568,6 @@ void set_vx_eq_vy_shift_right(Chirp* chirp, const int x, const int y)
   const uint8_t shifted_bit = y_value & 1;
   const bool has_carry = shifted_bit != 0;
 
-  chirp_registers_write(chirp->registers, 0xF, has_carry ? 1 : 0);
-
   const uint8_t result = y_value >> 1;
 
   if (chirp->config->is_debug)
@@ -601,6 +584,8 @@ void set_vx_eq_vy_shift_right(Chirp* chirp, const int x, const int y)
   }
 
   chirp_registers_write(chirp->registers, x, result);
+
+  chirp_registers_write(chirp->registers, 0xF, has_carry ? 1 : 0);
 }
 
 /**
@@ -615,8 +600,6 @@ void set_vx_eq_vx_shift_right(Chirp* chirp, const int x)
   const uint8_t x_value = chirp_registers_read(chirp->registers, x);
   const uint8_t shifted_bit = x_value & 1;
   const bool has_carry = shifted_bit != 0;
-
-  chirp_registers_write(chirp->registers, 0xF, has_carry ? 1 : 0);
 
   const uint8_t result = x_value >> 1;
 
@@ -634,6 +617,8 @@ void set_vx_eq_vx_shift_right(Chirp* chirp, const int x)
   }
 
   chirp_registers_write(chirp->registers, x, result);
+
+  chirp_registers_write(chirp->registers, 0xF, has_carry ? 1 : 0);
 }
 
 /**
@@ -647,9 +632,7 @@ void set_vx_eq_vy_minus_vx(Chirp* chirp, const int x, const int y)
 {
   const uint8_t x_value = chirp_registers_read(chirp->registers, x);
   const uint8_t y_value = chirp_registers_read(chirp->registers, y);
-  const bool has_underflow = y_value > x_value;
-
-  chirp_registers_write(chirp->registers, 0xF, has_underflow ? 1 : 0);
+  const bool has_carry = y_value >= x_value;
 
   const uint8_t result = y_value - x_value;
 
@@ -660,7 +643,7 @@ void set_vx_eq_vy_minus_vx(Chirp* chirp, const int x, const int y)
       x,
       y,
       x,
-      has_underflow
+      has_carry
         ? "with underflow"
         : "without underflow",
       result
@@ -668,6 +651,8 @@ void set_vx_eq_vy_minus_vx(Chirp* chirp, const int x, const int y)
   }
 
   chirp_registers_write(chirp->registers, x, result);
+
+  chirp_registers_write(chirp->registers, 0xF, has_carry ? 1 : 0);
 }
 
 /**
@@ -685,8 +670,6 @@ void set_vx_eq_vy_shift_left(Chirp* chirp, const int x, const int y)
   const uint8_t shifted_bit = y_value & 0x80;
   const bool has_carry = shifted_bit != 0;
 
-  chirp_registers_write(chirp->registers, 0xF, has_carry ? 1 : 0);
-
   const uint8_t result = y_value << 1;
 
   if (chirp->config->is_debug)
@@ -703,6 +686,8 @@ void set_vx_eq_vy_shift_left(Chirp* chirp, const int x, const int y)
   }
 
   chirp_registers_write(chirp->registers, x, result);
+
+  chirp_registers_write(chirp->registers, 0xF, has_carry ? 1 : 0);
 }
 
 /**
@@ -717,8 +702,6 @@ void set_vx_eq_vx_shift_left(Chirp* chirp, const int x)
   const uint8_t x_value = chirp_registers_read(chirp->registers, x);
   const uint8_t shifted_bit = x_value & 0x80;
   const bool has_carry = shifted_bit != 0;
-
-  chirp_registers_write(chirp->registers, 0xF, has_carry ? 1 : 0);
 
   const uint8_t result = x_value << 1;
 
@@ -736,6 +719,8 @@ void set_vx_eq_vx_shift_left(Chirp* chirp, const int x)
   }
 
   chirp_registers_write(chirp->registers, x, result);
+
+  chirp_registers_write(chirp->registers, 0xF, has_carry ? 1 : 0);
 }
 
 /**

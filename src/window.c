@@ -69,7 +69,7 @@ void sdl_beeper_free(SDLBeeper* beeper)
   SDL_free(beeper->tone);
   SDL_DestroyAudioStream(beeper->stream);
   SDL_CloseAudioDevice(beeper->dev);
-  SDL_zero(*beeper);
+  free(beeper);
 }
 
 void sdl_beeper_beep(SDLBeeper* beeper)
@@ -152,10 +152,10 @@ void sdl_window_free(SDLWindow* window)
 
 void sdl_window_draw_display(SDLWindow* window, const ChirpDisplay* display)
 {
-  SDL_SetRenderDrawColor(window->renderer, 0, 0, 0, 255);
+  SDL_SetRenderDrawColor(window->renderer, 44, 78, 138, 255);
   SDL_RenderClear(window->renderer);
 
-  SDL_SetRenderDrawColor(window->renderer, 255, 255, 255, 255);
+  SDL_SetRenderDrawColor(window->renderer, 147, 180, 237, 255);
   for (int y = 0; y < DISPLAY_HEIGHT; y++)
   {
     for (int x = 0; x < DISPLAY_WIDTH; x++)
