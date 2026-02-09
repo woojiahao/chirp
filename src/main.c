@@ -56,7 +56,7 @@ void usage(const char* prog)
           "usage: %s ROM [options]\n"
           "  [--debug]\n"
           "  [--shift-vx]\n"
-          "  [--jump-with-nn]\n"
+          "  [--jump-with-vx]\n"
           "  [--set-registers-increment-index]\n"
           "  [--load-registers-increment-index]\n"
           "  [--has-audio]\n"
@@ -72,7 +72,7 @@ ChirpConfig* parse_args(int argc, char* argv[])
 
   config->is_debug = false;
   config->has_audio = false;
-  config->jump_with_nn = false;
+  config->jump_with_vx = false;
   config->load_registers_increment_index = false;
   config->set_registers_increment_index = false;
   config->shift_vx = false;
@@ -81,7 +81,7 @@ ChirpConfig* parse_args(int argc, char* argv[])
   static struct option long_opts[] = {
     {"debug", no_argument, 0, 0},
     {"shift-vx", no_argument, 0, 0},
-    {"jump-with-nn", no_argument, 0, 0},
+    {"jump-with-vx", no_argument, 0, 0},
     {"set-registers-increment-index", no_argument, 0, 0},
     {"load-registers-increment-index", no_argument, 0, 0},
     {"audio", no_argument, 0, 0},
@@ -111,7 +111,7 @@ ChirpConfig* parse_args(int argc, char* argv[])
 
     if (strcmp(name, "debug") == 0) config->is_debug = true;
     else if (strcmp(name, "shift-vx") == 0) config->shift_vx = true;
-    else if (strcmp(name, "jump-with-nn") == 0) config->jump_with_nn = true;
+    else if (strcmp(name, "jump-with-vx") == 0) config->jump_with_vx = true;
     else if (strcmp(name, "set-registers-increment-index") == 0) config->set_registers_increment_index = true;
     else if (strcmp(name, "load-registers-increment-index") == 0) config->load_registers_increment_index = true;
     else if (strcmp(name, "audio") == 0) config->has_audio = true;

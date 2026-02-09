@@ -55,7 +55,7 @@ typedef struct ChirpConfig
   const char* rom_path;                // path to the rom; must be set by user
   bool is_debug;                       // defaults to false
   bool shift_vx;                       // affects 8XY6 and 8XYE; defaults to false
-  bool jump_with_nn;                   // affects BNNN; defaults to false
+  bool jump_with_vx;                   // affects BNNN; defaults to false
   bool set_registers_increment_index;  // affects FX55; defaults to false
   bool load_registers_increment_index; // affects FX65; defaults to false
   bool has_audio;                      // defaults to false
@@ -76,13 +76,11 @@ typedef struct Chirp
   uint16_t index_register;  // 16 bits to point to location
   uint8_t delay_timer;      // 8 bits to hold values from 0 to 60
   uint8_t sound_timer;      // 8 bits to hold values from 0 to 60
-  int waiting_key_register; // register to store key into
 
   // flags to indicate state for running the machine
   bool is_running;
   bool is_paused;
   bool need_draw_screen;
-  bool is_waiting_for_key;
 } Chirp;
 
 #endif

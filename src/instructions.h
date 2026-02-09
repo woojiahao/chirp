@@ -15,9 +15,9 @@ void subroutine_return(Chirp* chirp);             // 00EE
 void subroutine_call(Chirp* chirp, uint16_t nnn); // 2NNN
 
 // jump
-void jump(Chirp* chirp, uint16_t nnn);                     // 1NNN
-void jump_with_offset_nnn(Chirp* chirp, uint16_t nnn);     // BNNN (variation 1)
-void jump_with_offset_nn(Chirp* chirp, int x, uint8_t nn); // BNNN (variation 2)
+void jump(Chirp* chirp, uint16_t nnn);                           // 1NNN
+void jump_with_offset_nnn(Chirp* chirp, uint16_t nnn);           // BNNN (variation 1)
+void jump_with_offset_nnn_vx(Chirp* chirp, int x, uint16_t nnn); // BNNN (variation 2)
 
 // skip_if
 void skip_if_vx_eq_nn(Chirp* chirp, int x, uint8_t nn);  // 3XNN

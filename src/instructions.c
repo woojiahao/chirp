@@ -132,7 +132,7 @@ void jump(Chirp* chirp, const uint16_t nnn)
  *
  * Jumps to memory address at mem[V0] + NNN.
  *
- * Variation 2 accessible via --jump-with-nn.
+ * Variation 2 accessible via --jump-with-vx.
  */
 void jump_with_offset_nnn(Chirp* chirp, const uint16_t nnn)
 {
@@ -153,15 +153,15 @@ void jump_with_offset_nnn(Chirp* chirp, const uint16_t nnn)
  *
  * Jumps to memory address at mem[VX] + NN.
  */
-void jump_with_offset_nn(Chirp* chirp, const int x, const uint8_t nn)
+void jump_with_offset_nnn_vx(Chirp* chirp, const int x, const uint16_t nnn)
 {
-  const uint16_t destination = (uint16_t)chirp_registers_read(chirp->registers, x) + nn;
+  const uint16_t destination = (uint16_t)chirp_registers_read(chirp->registers, x) + nnn;
   if (chirp->config->is_debug)
   {
     SDL_Log(
       "[BNNN] jumping to %04X with offset of %d, current program counter is %04X\n",
       destination,
-      nn,
+      nnn,
       chirp->program_counter);
   }
   chirp->program_counter = destination;
@@ -942,14 +942,24 @@ void set_sound_eq_vx(Chirp* chirp, const int x)
  */
 void get_key(Chirp* chirp, const int x)
 {
-  chirp->is_waiting_for_key = true;
-  chirp->waiting_key_register = x;
-  // rest of implementation set in emulator loop on user input
+  for (int i = 0; i < CHIRP_KEYBOARD_SIZE; i++)
+  {
+    if (chirp_keyboard_read(chirp->keyboard, i))
+    {
+      chirp_registers_write(chirp->registers, x, i);
+      if (chirp->config->is_debug)
+      {
+        SDL_Log("[FX0A] key %d pressed\n", i);
+      }
+      return;
+    }
+  }
 
   if (chirp->config->is_debug)
   {
-    SDL_Log("[FX0A] waiting for key %d to be pressed\n", x);
+    SDL_Log("[FX0A] no key pressed yet\n");
   }
+  chirp->program_counter -= 2;
 }
 
 /**

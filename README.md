@@ -30,7 +30,7 @@ Download the released binary for MacOS ARM64 and test:
 usage: chirp ROM [options]
   [--debug]
   [--shift-vx]
-  [--jump-with-nn]
+  [--jump-with-vx]
   [--set-registers-increment-index]
   [--load-registers-increment-index]
   [--has-audio]

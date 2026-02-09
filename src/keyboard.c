@@ -15,13 +15,14 @@ ChirpKeyboard* chirp_keyboard_new()
   return keyboard;
 }
 
-// TODO: Add guardrails to prevent out of bounds access
 uint8_t chirp_keyboard_read(const ChirpKeyboard* keyboard, const int addr)
 {
-  return keyboard->keyboard[addr & 0x0FFF];
+  if (addr < 0 || addr >= CHIRP_KEYBOARD_SIZE) return 0;
+  return keyboard->keyboard[addr & 0x0F];
 }
 
 void chirp_keyboard_write(ChirpKeyboard* keyboard, const int addr, const bool value)
 {
-  keyboard->keyboard[addr & 0x0FFF] = value;
+  if (addr < 0 || addr >= CHIRP_KEYBOARD_SIZE) return;
+  keyboard->keyboard[addr & 0x0F] = value;
 }

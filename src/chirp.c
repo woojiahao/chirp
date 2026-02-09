@@ -70,13 +70,11 @@ Chirp* chirp_new(ChirpConfig* config)
   chirp->is_running = true;
   chirp->is_paused = false;
   chirp->need_draw_screen = true; // draw the very first screen
-  chirp->is_waiting_for_key = false;
 
   chirp->delay_timer = 0;
   chirp->sound_timer = 0;
   chirp->index_register = 0;
   chirp->program_counter = (uint16_t)CHIRP_INSTRUCTIONS_ADDR_START;
-  chirp->waiting_key_register = -1; // -1 to indicate that this is empty
 
   chirp_load_rom(chirp);
   chirp_load_fonts(chirp);
@@ -271,9 +269,9 @@ void chirp_execute(Chirp* chirp, const uint16_t instruction)
     return;
 
   case 0xB000:
-    if (chirp->config->jump_with_nn)
+    if (chirp->config->jump_with_vx)
     {
-      jump_with_offset_nn(chirp, x, nn);
+      jump_with_offset_nnn_vx(chirp, x, nnn);
     }
     else
     {
@@ -407,12 +405,6 @@ void chirp_start_emulator_loop(Chirp* chirp, SDLWindow* window)
           if (e.key.key == KEYMAP[i])
           {
             chirp_keyboard_write(chirp->keyboard, i, true);
-            if (chirp->is_waiting_for_key)
-            {
-              chirp_registers_write(chirp->registers, chirp->waiting_key_register, i);
-              chirp->is_waiting_for_key = false;
-              chirp->waiting_key_register = -1;
-            }
           }
         }
         break;
@@ -443,14 +435,11 @@ void chirp_start_emulator_loop(Chirp* chirp, SDLWindow* window)
     {
       if (cpu_accumulator >= cpu_tick_interval)
       {
-        if (!chirp->is_waiting_for_key)
-        {
-          // fetch instruction
-          const uint16_t instruction = chirp_fetch(chirp);
+        // fetch instruction
+        const uint16_t instruction = chirp_fetch(chirp);
 
-          // execute instruction
-          chirp_execute(chirp, instruction);
-        }
+        // execute instruction
+        chirp_execute(chirp, instruction);
         cpu_accumulator -= cpu_tick_interval;
       }
 
