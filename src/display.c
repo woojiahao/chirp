@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void _check_bounds(int x, int y)
+void check_bounds(const int x, const int y)
 {
   if (x < 0 || x >= DISPLAY_WIDTH || y < 0 || y >= DISPLAY_HEIGHT)
   {
@@ -11,9 +11,9 @@ void _check_bounds(int x, int y)
   }
 }
 
-ChirpDisplay *chirp_display_new()
+ChirpDisplay* chirp_display_new()
 {
-  ChirpDisplay *display = (ChirpDisplay *)malloc(sizeof(ChirpDisplay));
+  ChirpDisplay* display = (ChirpDisplay*)malloc(sizeof(ChirpDisplay));
 
   for (int y = 0; y < DISPLAY_HEIGHT; y++)
   {
@@ -26,25 +26,25 @@ ChirpDisplay *chirp_display_new()
   return display;
 }
 
-bool chirp_display_get_pixel(ChirpDisplay *display, int x, int y)
+bool chirp_display_get_pixel(const ChirpDisplay* display, const int x, const int y)
 {
-  _check_bounds(x, y);
+  check_bounds(x, y);
   return display->display[y][x];
 }
 
-void chirp_display_set_pixel(ChirpDisplay *display, int x, int y, bool state)
+void chirp_display_set_pixel(ChirpDisplay* display, const int x, const int y, const bool state)
 {
-  _check_bounds(x, y);
+  check_bounds(x, y);
   display->display[y][x] = state;
 }
 
-void chirp_display_flip_pixel(ChirpDisplay *display, int x, int y)
+void chirp_display_flip_pixel(ChirpDisplay* display, const int x, const int y)
 {
-  _check_bounds(x, y);
+  check_bounds(x, y);
   display->display[y][x] = !chirp_display_get_pixel(display, x, y);
 }
 
-void chirp_display_clear(ChirpDisplay *display)
+void chirp_display_clear(ChirpDisplay* display)
 {
   for (int y = 0; y < DISPLAY_HEIGHT; y++)
   {

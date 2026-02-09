@@ -96,7 +96,7 @@ ChirpConfig* parse_args(int argc, char* argv[])
   {
     if (c == '?')
     {
-      fprintf(stderr, "invalid option %s\n", argv[opt_index - 1]);
+      usage(argv[0]);
       exit(1);
     }
 

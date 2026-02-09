@@ -1,23 +1,24 @@
-#include "chirp.h"
+#include <SDL3/SDL.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
-#include <SDL3/SDL.h>
 
-void chirp_load_rom(Chirp *chirp, const char *rom_path)
+#include "chirp.h"
+#include "instructions.h"
+
+void chirp_load_rom(Chirp* chirp)
 {
-  FILE *rom = fopen(rom_path, "rb");
+  FILE* rom = fopen(chirp->config->rom_path, "rb");
   if (rom != NULL)
   {
     fseek(rom, 0, SEEK_END);
-    long rom_size = ftell(rom);
+    const long rom_size = ftell(rom);
     rewind(rom);
 
-    uint8_t *rom_contents = (uint8_t *)malloc(sizeof(uint8_t) * rom_size);
+    uint8_t* rom_contents = malloc(sizeof(uint8_t) * rom_size);
     if (rom_contents == NULL)
     {
       fclose(rom);
-      printf("out of memory\n");
+      fprintf(stderr, "out of memory\n");
       exit(1);
     }
 
@@ -25,7 +26,7 @@ void chirp_load_rom(Chirp *chirp, const char *rom_path)
     if (CHIRP_INSTRUCTIONS_REGION_SIZE < rom_size)
     {
       fclose(rom);
-      printf("ROM too large\n");
+      fprintf(stderr, "ROM too large\n");
       exit(1);
     }
 
@@ -34,22 +35,17 @@ void chirp_load_rom(Chirp *chirp, const char *rom_path)
       chirp_mem_write(chirp->mem, i + CHIRP_INSTRUCTIONS_ADDR_START, rom_contents[i]);
     }
 
-    // for (int i = 0; i < rom_size; i += 2)
-    // {
-    //   printf("%04x\n", rom_contents[i] << 8 | rom_contents[i + 1]);
-    // }
-
     fclose(rom);
     free(rom_contents);
   }
   else
   {
-    printf("ROM not found\n");
+    fprintf(stderr, "ROM not found\n");
     exit(1);
   }
 }
 
-void chirp_load_fonts(Chirp *chirp)
+void chirp_load_fonts(Chirp* chirp)
 {
   for (int i = 0; i < CHIRP_FONTS_BYTES; i++)
   {
@@ -58,9 +54,11 @@ void chirp_load_fonts(Chirp *chirp)
 }
 
 // loads all the necessary state for the CHIP-8 emulator
-Chirp *chirp_new(ChirpConfig *config)
+Chirp* chirp_new(ChirpConfig* config)
 {
-  Chirp *chirp = (Chirp *)malloc(sizeof(Chirp));
+  Chirp* chirp = malloc(sizeof(Chirp));
+
+  chirp->config = config;
 
   // the memory all set to 0s
   chirp->mem = chirp_mem_new();
@@ -70,23 +68,23 @@ Chirp *chirp_new(ChirpConfig *config)
   chirp->keyboard = chirp_keyboard_new();
 
   chirp->is_running = true;
-  chirp->need_draw_screen = true;
+  chirp->is_paused = false;
+  chirp->need_draw_screen = true; // draw the very first screen
   chirp->is_waiting_for_key = false;
 
   chirp->delay_timer = 0;
   chirp->sound_timer = 0;
   chirp->index_register = 0;
   chirp->program_counter = (uint16_t)CHIRP_INSTRUCTIONS_ADDR_START;
+  chirp->waiting_key_register = -1; // -1 to indicate that this is empty
 
-  chirp->config = config;
-
-  chirp_load_rom(chirp, config->rom_path);
+  chirp_load_rom(chirp);
   chirp_load_fonts(chirp);
 
   return chirp;
 }
 
-void chirp_update_timers(Chirp *chirp)
+void chirp_update_timers(Chirp* chirp, SDLWindow* window)
 {
   if (chirp->delay_timer > 0)
   {
@@ -95,47 +93,74 @@ void chirp_update_timers(Chirp *chirp)
 
   if (chirp->sound_timer > 0)
   {
+    if (chirp->config->has_audio)
+    {
+      sdl_window_start_beep(window);
+    }
     chirp->sound_timer--;
+  }
+  else
+  {
+    if (chirp->config->has_audio)
+    {
+      sdl_window_stop_beep(window);
+    }
   }
 }
 
-uint16_t chirp_fetch(Chirp *chirp)
+void chirp_free(Chirp* chirp)
 {
-  uint8_t first_block = chirp_mem_read(chirp->mem, chirp->program_counter++);
-  uint8_t second_block = chirp_mem_read(chirp->mem, chirp->program_counter++);
+  free(chirp->mem);
+  free(chirp->registers);
+  free(chirp->stack);
+  free(chirp->display);
+  free(chirp->config);
+  free(chirp);
+}
+
+uint16_t chirp_fetch(Chirp* chirp)
+{
+  const uint8_t first_block = chirp_mem_read(chirp->mem, chirp->program_counter++);
+  const uint8_t second_block = chirp_mem_read(chirp->mem, chirp->program_counter++);
 
   // create the instruction using bit shifting
-  uint16_t instruction = ((uint16_t)first_block << 8) | second_block;
-  if (chirp->config->is_debug)
-  {
-    // printf("reading instruction %04x\n", instruction);
-  }
+  const uint16_t instruction = ((uint16_t)first_block << 8) | second_block;
 
   return instruction;
 }
 
-void chirp_execute(Chirp *chirp, uint16_t instruction)
+void chirp_execute(Chirp* chirp, const uint16_t instruction)
 {
-  uint16_t opcode = instruction & 0xF000;
-  uint8_t vx = (instruction & 0x0F00) >> 8;
-  uint8_t vy = (instruction & 0x00F0) >> 4;
-  uint8_t n = instruction & 0x000F;
-  uint8_t nn = instruction & 0x00FF;
-  uint16_t nnn = instruction & 0x0FFF;
+  const uint16_t opcode = instruction & 0xF000;
+  const uint8_t x = (instruction & 0x0F00) >> 8;
+  const uint8_t y = (instruction & 0x00F0) >> 4;
+  const uint8_t n = instruction & 0x000F;
+  const uint8_t nn = instruction & 0x00FF;
+  const uint16_t nnn = instruction & 0x0FFF;
 
   if (chirp->config->is_debug)
   {
-    printf(
+    if (chirp_stack_is_empty(chirp->stack))
+    {
+      SDL_Log(
+        "executing instruction %04X with PC = %04X and EMPTY STACK\n",
+        instruction,
+        chirp->program_counter);
+    }
+    else
+    {
+      SDL_Log(
         "executing instruction %04X with PC = %04X and top of stack as %04X\n",
         instruction,
         chirp->program_counter,
-        chirp_stack_is_empty(chirp->stack) ? 0x0000 : chirp_stack_peek(chirp->stack));
+        chirp_stack_peek(chirp->stack));
+    }
   }
 
   switch (opcode)
   {
   case 0x0000:
-    switch (instruction & 0x0FFF)
+    switch (nnn)
     {
     case 0x00E0:
       // clear screen
@@ -146,7 +171,7 @@ void chirp_execute(Chirp *chirp, uint16_t instruction)
       subroutine_return(chirp);
       return;
     default:
-      printf("invalid instruction %04X\n", instruction);
+      fprintf(stderr, "invalid instruction %04X\n", instruction);
       exit(1);
     }
 
@@ -159,63 +184,86 @@ void chirp_execute(Chirp *chirp, uint16_t instruction)
     return;
 
   case 0x3000:
-    skip_if_vx_eq_nn(chirp, vx, nn);
+    skip_if_vx_eq_nn(chirp, x, nn);
     return;
 
   case 0x4000:
-    skip_if_vx_neq_nn(chirp, vx, nn);
+    skip_if_vx_neq_nn(chirp, x, nn);
     return;
 
   case 0x5000:
-    skip_if_vx_eq_vy(chirp, vx, vy);
+    if (n != 0x0)
+    {
+      SDL_LogError(SDL_LOG_CATEGORY_ERROR, "invalid instruction %04X\n", instruction);
+      exit(1);
+    }
+    skip_if_vx_eq_vy(chirp, x, y);
     return;
 
   case 0x6000:
-    set_vx_eq_nn(chirp, vx, nn);
+    set_vx_eq_nn(chirp, x, nn);
     return;
 
   case 0x7000:
-    set_vx_eq_vx_plus_nn(chirp, vx, nn);
+    set_vx_eq_vx_plus_nn(chirp, x, nn);
     return;
 
   case 0x8000:
     switch (n)
     {
     case 0x0:
-      set_vx_to_vy(chirp, vx, vy);
+      set_vx_eq_vy(chirp, x, y);
       return;
     case 0x1:
-      set_vx_eq_vx_or_vy(chirp, vx, vy);
+      set_vx_eq_vx_or_vy(chirp, x, y);
       return;
     case 0x2:
-      set_vx_eq_vx_and_vy(chirp, vx, vy);
+      set_vx_eq_vx_and_vy(chirp, x, y);
       return;
     case 0x3:
-      set_vx_eq_vx_xor_vy(chirp, vx, vy);
+      set_vx_eq_vx_xor_vy(chirp, x, y);
       return;
     case 0x4:
-      set_vx_eq_vx_plus_vy(chirp, vx, vy);
+      set_vx_eq_vx_plus_vy(chirp, x, y);
       return;
     case 0x5:
-      set_vx_eq_vx_minus_vy(chirp, vx, vy);
+      set_vx_eq_vx_minus_vy(chirp, x, y);
       return;
     case 0x6:
-      set_vx_eq_vy_shift_right(chirp, vx, vy);
+      if (chirp->config->shift_vx)
+      {
+        set_vx_eq_vx_shift_right(chirp, x);
+      }
+      else
+      {
+        set_vx_eq_vy_shift_right(chirp, x, y);
+      }
       return;
     case 0x7:
-      set_vx_eq_vy_minus_vx(chirp, vx, vy);
+      set_vx_eq_vy_minus_vx(chirp, x, y);
       return;
     case 0xE:
-      set_vx_eq_vy_shift_left(chirp, vx, vy);
+      if (chirp->config->shift_vx)
+      {
+        set_vx_eq_vx_shift_left(chirp, x);
+      }
+      else
+      {
+        set_vx_eq_vy_shift_left(chirp, x, y);
+      }
       return;
     default:
-      printf("invalid instruction %04X\n", instruction);
+      fprintf(stderr, "invalid instruction %04X\n", instruction);
       exit(1);
     }
-    return;
 
   case 0x9000:
-    skip_if_vx_neq_vy(chirp, vx, vy);
+    if (n != 0x0)
+    {
+      SDL_LogError(SDL_LOG_CATEGORY_ERROR, "invalid instruction %04X\n", instruction);
+      exit(1);
+    }
+    skip_if_vx_neq_vy(chirp, x, y);
     return;
 
   case 0xA000:
@@ -223,90 +271,114 @@ void chirp_execute(Chirp *chirp, uint16_t instruction)
     return;
 
   case 0xB000:
-    jump_with_offset(chirp, nnn);
+    if (chirp->config->jump_with_nn)
+    {
+      jump_with_offset_nn(chirp, x, nn);
+    }
+    else
+    {
+      jump_with_offset_nnn(chirp, nnn);
+    }
     return;
 
   case 0xC000:
-    set_vx_eq_random(chirp, vx, nn);
+    set_vx_eq_random(chirp, x, nn);
     return;
 
   case 0xD000:
-    draw(chirp, vx, vy, n);
+    draw(chirp, x, y, n);
     return;
 
   case 0xE000:
     switch (nn)
     {
     case 0x9E:
-      skip_if_key_eq_vx(chirp, vx);
+      skip_if_key_vx_pressed(chirp, x);
       return;
     case 0xA1:
-      skip_if_key_neq_vx(chirp, vx);
+      skip_if_key_vx_not_pressed(chirp, x);
       return;
     default:
-      printf("invalid instruction %04X\n", instruction);
+      fprintf(stderr, "invalid instruction %04X\n", instruction);
       exit(1);
     }
-    return;
 
   case 0xF000:
     switch (nn)
     {
     case 0x07:
-      set_vx_eq_delay(chirp, vx);
+      set_vx_eq_delay(chirp, x);
       return;
     case 0x15:
-      set_delay_eq_vx(chirp, vx);
+      set_delay_eq_vx(chirp, x);
       return;
     case 0x18:
-      set_sound_eq_vx(chirp, vx);
+      set_sound_eq_vx(chirp, x);
       return;
     case 0x1E:
-      set_index_eq_index_plus_vx(chirp, vx);
+      set_index_eq_index_plus_vx(chirp, x);
       return;
     case 0x0A:
-      get_key(chirp, vx);
+      get_key(chirp, x);
       return;
     case 0x29:
-      set_index_to_font(chirp, vx);
+      set_index_eq_font(chirp, x);
       return;
     case 0x33:
-      binary_coded_decimal_conversion(chirp, vx);
+      binary_coded_decimal_conversion(chirp, x);
       return;
     case 0x55:
-      set_registers(chirp, vx);
+      if (chirp->config->set_registers_increment_index)
+      {
+        set_registers_inc(chirp, x);
+      }
+      else
+      {
+        set_registers(chirp, x);
+      }
       return;
     case 0x65:
-      load_registers(chirp, vx);
+      if (chirp->config->load_registers_increment_index)
+      {
+        load_registers_inc(chirp, x);
+      }
+      else
+      {
+        load_registers(chirp, x);
+      }
       return;
+    default:
+      fprintf(stderr, "invalid instruction %04X\n", instruction);
+      exit(1);
     }
-    return;
+  default:
+    fprintf(stderr, "invalid instruction %04X\n", instruction);
+    exit(1);
   }
 }
 
-void chirp_start_emulator_loop(Chirp *chirp, ChirpWindow *window)
+void chirp_start_emulator_loop(Chirp* chirp, SDLWindow* window)
 {
   const double timer_tick_interval = 1.0 / 60.0;
-  const double cpu_tick_interval = 1.0 / 800.0; // TODO: make this variable
+  const double cpu_tick_interval = 1.0 / ((float)chirp->config->cpu_speed);
   double timer_accumulator = 0.0;
   double cpu_accumulator = 0.0;
 
   uint64_t last_time = SDL_GetPerformanceCounter();
-  uint64_t freq = SDL_GetPerformanceFrequency();
+  const uint64_t freq = SDL_GetPerformanceFrequency();
 
   SDL_Event e;
   SDL_zero(e);
 
-emulator_loop:
   while (chirp->is_running)
   {
-    uint64_t now = SDL_GetPerformanceCounter();
-    double dt = (double)(now - last_time) / freq;
-    if (dt > 0.1)
-      dt = 0.1;
+    const uint64_t now = SDL_GetPerformanceCounter();
+    const double dt = (double)(now - last_time) / (double)freq;
 
     timer_accumulator += dt;
     cpu_accumulator += dt;
+
+    bool is_quitting = false;
 
     while (SDL_PollEvent(&e))
     {
@@ -314,18 +386,14 @@ emulator_loop:
       {
       case SDL_EVENT_QUIT:
         chirp->is_running = false;
-        // update the timing to avoid exploding the timing
-        last_time = now;
-        goto emulator_loop;
+        is_quitting = true;
         break;
       case SDL_EVENT_KEY_DOWN:
         switch (e.key.key)
         {
         case SDLK_ESCAPE:
           chirp->is_running = false;
-          // update the timing to avoid exploding the timing
-          last_time = now;
-          goto emulator_loop;
+          is_quitting = true;
           break;
         case SDLK_SPACE:
           chirp->is_paused = !chirp->is_paused;
@@ -341,7 +409,9 @@ emulator_loop:
             chirp_keyboard_write(chirp->keyboard, i, true);
             if (chirp->is_waiting_for_key)
             {
+              chirp_registers_write(chirp->registers, chirp->waiting_key_register, i);
               chirp->is_waiting_for_key = false;
+              chirp->waiting_key_register = -1;
             }
           }
         }
@@ -355,13 +425,16 @@ emulator_loop:
           }
         }
         break;
+      default:
+        break;
       }
     }
 
-    if (chirp->is_paused)
+    // update the timing
+    last_time = now;
+
+    if (chirp->is_paused || is_quitting)
     {
-      // update the timing to avoid exploding the timing
-      last_time = now;
       continue;
     }
 
@@ -373,7 +446,7 @@ emulator_loop:
         if (!chirp->is_waiting_for_key)
         {
           // fetch instruction
-          uint16_t instruction = chirp_fetch(chirp);
+          const uint16_t instruction = chirp_fetch(chirp);
 
           // execute instruction
           chirp_execute(chirp, instruction);
@@ -384,19 +457,16 @@ emulator_loop:
       if (timer_accumulator >= timer_tick_interval)
       {
         // update timers
-        chirp_update_timers(chirp);
+        chirp_update_timers(chirp, window);
         timer_accumulator -= timer_tick_interval;
 
         // render screen at 60Hz
         if (chirp->need_draw_screen)
         {
-          draw_display(window, chirp->display);
+          sdl_window_draw_display(window, chirp->display);
           chirp->need_draw_screen = false;
         }
       }
     }
-
-    // update the timing
-    last_time = now;
   }
 }
